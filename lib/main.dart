@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'dart:io';
+
 void main() {
   runApp(const MyApp());
 }
@@ -29,20 +31,31 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _showImage = false;
   bool _isConnected = false;
 
-  void _toggleImage() async {
-    var checkConn = await Connectivity().checkConnectivity();
-    if (checkConn == ConnectivityResult.wifi) {
-      setState(() {
-        _isConnected = true;
-        _showImage = true;
-      });
-    } else {
-      setState(() {
-        _isConnected = false;
-        _showImage = false;
-      });
+
+void _checkConnectivity() async {
+  var connectivityResult = await Connectivity().checkConnectivity();
+  bool hasInternet = false;
+
+  if (connectivityResult == ConnectivityResult.mobile ||
+      connectivityResult == ConnectivityResult.wifi) {
+    hasInternet = true;
+  } else {
+    // Uhmm for some reason wired connection was not working on QEMU.
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        hasInternet = true;
+      }
+    } catch (e) {
+      hasInternet = false;
     }
   }
+
+  setState(() {
+    _isConnected = hasInternet;
+    _showImage = hasInternet;
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _toggleImage,
+              onPressed: _checkConnectivity,
               child: Text('Show Image'),
             ),
             SizedBox(height: 20),
@@ -68,9 +81,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     width: 150,
                     height: 150,
                   )
-                : !_isConnected
-                    ? Text("No Internet Connection", style: TextStyle(color: Colors.red))
-                    : Container(),
+                : _isConnected
+                    ? Container()
+                    : Text("No Internet Connection", style: TextStyle(color: Colors.red)),
           ],
         ),
       ),
