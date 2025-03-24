@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,11 +27,21 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool _showImage = false;
+  bool _isConnected = false;
 
-  void _toggleImage() {
-    setState(() {
-      _showImage = true;
-    });
+  void _toggleImage() async {
+    var checkConn = await Connectivity().checkConnectivity();
+    if (checkConn == ConnectivityResult.wifi) {
+      setState(() {
+        _isConnected = true;
+        _showImage = true;
+      });
+    } else {
+      setState(() {
+        _isConnected = false;
+        _showImage = false;
+      });
+    }
   }
 
   @override
@@ -57,7 +68,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     width: 150,
                     height: 150,
                   )
-                : Container(),
+                : !_isConnected
+                    ? Text("No Internet Connection", style: TextStyle(color: Colors.red))
+                    : Container(),
           ],
         ),
       ),
